@@ -1,0 +1,13 @@
+.navbar-brand{
+    width: 150px;
+    height: 80px; 
+}
+.logo{
+    filter: contrast(0) brightness(250%) !important;
+}
+.sectionLink{
+    display: flex; 
+}
+.header-nav, .header-nav2{
+    display: flex;
+}

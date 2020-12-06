@@ -1,0 +1,9 @@
+.datePickerClass{
+    padding: 5px 5px;
+    border-color: lightgray;
+    font-size: 15px;
+    position: relative;
+    background: url('https://i.ibb.co/WzVFF5t/calender-icon.png') no-repeat; 
+    background-size: 20px 20px;
+    background-position: right center;
+}
