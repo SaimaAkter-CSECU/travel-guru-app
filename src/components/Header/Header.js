@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import { fade, makeStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -6,6 +6,7 @@ import Typography from '@material-ui/core/Typography';
 import InputBase from '@material-ui/core/InputBase';
 import SearchIcon from '@material-ui/icons/Search';
 import { Button, Link } from '@material-ui/core';
+import { UserContext } from '../../App';
 
 const useStyles = makeStyles((theme) => ({
   navbar: {
@@ -92,6 +93,7 @@ const navbar={
 
 const Header = () => {
     const classes = useStyles();
+    const { user, signOUtUser } = useContext(UserContext)
     return (
         <div>
             <AppBar position="static" style={{ background: 'transparent', boxShadow: 'none' }}>
@@ -138,11 +140,26 @@ const Header = () => {
                             Contact
                         </Link>
                     </Typography>
-                    <a href = "/login" style={{textDecoration: 'none'}}>
-                    <Button variant="contained" className={classes.btn}>
-                        Login
-                    </Button>
-                    </a>
+                    {user ? (
+                        <div style={{display: 'flex', alignItems: 'center'}}>
+                          <Typography className={` ${location.pathname === '/' || location.pathname.includes("/home") || location.pathname.includes("/booking/") ? classes.navLink : classes.navLink2} `} variant="h6" noWrap>
+                            {user.name.split(' ')[0]}
+                          </Typography>
+                          <Button variant="contained" className={classes.btn} onClick={signOUtUser}>
+                                Logout
+                          </Button>
+                        </div>
+                      ) 
+                      : 
+                      (
+                          <a href = "/login" style={{textDecoration: 'none'}}>
+                            <Button variant="contained" className={classes.btn}>
+                                Login
+                            </Button>
+                          </a>
+                      )
+                    }
+
                 </div>
                 </Toolbar>
             </AppBar>

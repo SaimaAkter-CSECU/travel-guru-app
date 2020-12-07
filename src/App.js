@@ -1,4 +1,4 @@
-import React, { Component, createContext, useState  } from 'react';
+import React, { Component, createContext, useState, useEffect  } from 'react';
 import {
   BrowserRouter as Router,
   Switch,
@@ -16,14 +16,26 @@ import Booking from './components/Booking/Booking';
 import NotFound from './components/NotFound/NotFound';
 import Hotels from './components/HotelDetails/Hotels';
 import PrivateRoute from './components/PrivateRoute/PrivateRoute';
+import {handleSignOut, getCurrentUser} from './components/Login/Auth'; 
 
 export const UserContext = createContext();
 
 function App() {
   const [user, setUser] = useState(null);
   const [bookingInformation, setBookingInformation] = useState({});
+  useEffect(() => {
+    getCurrentUser().then(res => {
+      setUser(res)
+    })
+  }, []);
+  const signOUtUser = () => {
+    handleSignOut().then(res => {
+      setUser(res)
+    })
+  };
+
     return (
-      <UserContext.Provider value={{ user, setUser, bookingInformation, setBookingInformation}}>
+      <UserContext.Provider value={{ user, setUser, bookingInformation, setBookingInformation, signOUtUser}}>
         <div className={`${location.pathname === '/' || location.pathname.includes('home') || location.pathname.includes('booking') ? "home" : ""}`}>
           <Header></Header>
           <Router>

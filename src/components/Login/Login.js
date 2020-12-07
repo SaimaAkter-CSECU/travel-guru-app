@@ -1,19 +1,17 @@
-import React, {useState, useContext} from 'react';
-
-import firebase from 'firebase/app';
-import 'firebase/auth'; 
-import firebaseConfig from './firebase.config'; 
-firebase.initializeApp(firebaseConfig);
-
-
+import React, {useState, useContext, useEffect} from 'react';
+import { Redirect, useHistory, useLocation } from 'react-router-dom';
 import { Box, Button, TextField, FormControlLabel, Checkbox } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import {UserContext} from '../../App';
-import { useHistory, useLocation } from 'react-router-dom';
+import handleError from './ErrorHandle'; 
+import firebase from 'firebase/app';
+import 'firebase/auth'; 
+// import { useHistory, useLocation } from 'react-router-dom';
 
-// import {initializeFirebase} from './Auth'; 
-
-
+import {createUserWithEmailAndPassword, initializeFirebase, handleGoogleSignIn, handleFacebookLogIn } from './Auth'; 
+// import { css } from "@emotion/core";
+// import FadeLoader from "react-spinners/FadeLoader";
+initializeFirebase(); 
 
 const initUser = {
   firstName: '',
@@ -126,68 +124,206 @@ const Login = () => {
         );
     }
 
-    const [hasAccount, setHasAccount] = useState(true); 
+    // const [hasAccount, setHasAccount] = useState(true); 
 
     const history = useHistory();
+    const location = useLocation();
+    let { from } = location.state || { from: { pathname: "/" } };
+
     const [loading, setLoading] = useState(false);
-    const [newUser, setNewUser] = useState(true);
+    const [newUser, setNewUser] = useState(false);
     const [userInfo, setUserInfo] = useState({ ...initUser });
+
+    const googleSignIn = () => {
+        handleGoogleSignIn()
+          .then(res => {
+            if (res.error) {
+              setUserInfo({ ...userInfo, errors: res })
+            } else {
+              setUser({ ...res })
+              history.replace(from)
+            }
+        })
+    }
+
+    const facebookLogIn = () => {
+        handleFacebookLogIn()
+            .then(res =>{
+                if (res.error) {
+                    setUserInfo({ ...userInfo, errors: res })
+                } 
+                else {
+                    setUser({ ...res })
+                    history.replace(from)  
+                }
+            })
+    }
+
+    const onChangeHandler = e => {
+        setUserInfo(previousState => ({ ...previousState, [e.target.name]: e.target.value }))
+        e.persist()
+    }
+
+    // const override = css`
+    //         display: block;
+    //         margin: 0 auto;
+    //         display:flex;
+    //         color:#000;`
+    //     ;
+
+    const submitHandler = e => {
+        const errors = handleError(userInfo);
+        setUserInfo({ ...userInfo, errors })
+        console.log(userInfo.errors)
+        if (Object.keys(errors).length === 0 && newUser) {
+          setLoading(true)
+          createUserWithEmailAndPassword({ firstName, lastName, email, password })
+            .then(res => {
+              setLoading(false)
+              if (res.error) {
+                setUserInfo({ ...userInfo, errors: res })
+              } else {
+                setUser({ ...res })
+                history.replace(from)
+              }
+            })
+        }
+        if (!errors.email && !errors.password) {
+            if (userInfo.password && userInfo.email && !newUser) {
+                firebase.auth().signInWithEmailAndPassword(email, password)
+                .then(res => {
+                    const data= {
+                        name : res.user.displayName,
+                        email : res.user.email
+                    }
+                    setUser({ ...data }) 
+                    console.log(user);
+                })
+                .catch((error) => {
+                    const errors = {};
+                    const errorCode = error.code;
+                    if(errorCode === 'auth/user-not-found'){
+                        errors.error = "No user Found with this email!";
+                    }
+                    else if(errorCode === 'auth/user-not-found'){
+                        errors.error = "Incorrect Password for this email!";
+                    }
+                    else{
+                        errors.error = error.message;
+                    }
+                    console.log(errors.error); 
+                    console.log(userInfo)
+                    setUserInfo({ ...userInfo, errors: errors.error })
+                    console.log(userInfo.errors)
+                });
+            }
+        }
+        e.preventDefault();
+    }
+
+    useEffect(() => {
+        setUserInfo({ ...initUser })
+    }, [newUser])
+    
+    // useEffect(() => {
+    //     console.log('login');
+    // }, [])
+
+    const { firstName, lastName, email, password, confirmPassword, errors } = userInfo;
+    
+    if (user) {
+        return <Redirect to='/' />
+    }
+    
 
     
     return (
         <div style={{marginBottom: '100px'}}>
-            {
-                hasAccount ? 
-                    <Box className={classes.box}>
-                        <h6 className={classes.boxHeading}>Log in</h6>
-                        <form >
-                            <TextField name="email"  label="Username or Email" className={classes.input} required/>
-                            <br />
-                            <TextField name="password"  label="Password" className={classes.input} type="password" required />
-                            < br />
-                            <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                                <FormControlLabel
-                                    control={<Checkbox name="checkbox" style={{padding: '2px 5px'}} />}
-                                    label="Remember Me" className={classes.checkBox} style={{fontSize: '12px'}}
-                                />
-                                <a className={classes.toggleButton} style={{paddingTop: '5px'}}>Forget Password</a>
-                            </div>
-                        </form>
-                        <Button variant="contained" className={classes.btn} >
-                            Login
-                        </Button>
-                        <p style={{color: 'red', marginTop: '10px'}}>Error</p>
-                        <p>Don't have an account? <span><a className={classes.toggleButton} onClick={() => setHasAccount(!hasAccount)} >Create an Account</a></span></p>
-                    </Box>
-                :
-                    <Box className={classes.box}>
-                        <h6 className={classes.boxHeading}>Create an Account</h6>
-                        <form>
-                            <TextField label="First Name" className={classes.input}/>
-                            <br />
-                            <TextField label="Last Name" className={classes.input}/>
-                            <br />
-                            <TextField label="Username or Email" className={classes.input}/>
-                            <br />
-                            <TextField type="password" label="Password" className={classes.input}/>
-                            <br />
-                            <TextField type="password" label="Confirm Password" className={classes.input}/>
-                        </form>
-                        <Button variant="contained" className={classes.btn} >
-                            Create an Account
-                        </Button>
-                        <p>Already have an account? <span><a className={classes.toggleButton} onClick={() => setHasAccount(!hasAccount)}>Login</a></span></p>
-                    </Box>
-            }
+            <Box className={classes.box}>
+                <h6 className={classes.boxHeading}>
+                    { newUser ? 'Create an Account' : 'Log In'}
+                </h6>
+                <form onSubmit={submitHandler}>
+                    {newUser && (
+                        <TextField 
+                            
+                            label="First Name" 
+                            name="firstName" 
+                            className={classes.input}
+                            onBlur= {onChangeHandler}
+                            error={errors.firstName}
+                            required
+                        />
+                    )}
+                    {newUser && (
+                        <TextField 
+                            
+                            label="Last Name" 
+                            name="lastName" 
+                            className={classes.input}
+                            onBlur= {onChangeHandler}
+                            error={errors.lastName}
+                            required
+                        />
+                    )}
+                    <TextField 
+                        // value={email}
+                        name="email"  
+                        label="Email" 
+                        className={classes.input} 
+                        type="email" 
+                        onBlur={onChangeHandler} 
+                        error={errors.email}
+                        required
+                    />
+                    <TextField 
+                        // value={password}
+                        name="password"  
+                        label="Password" 
+                        className={classes.input} 
+                        type="password" 
+                        onBlur={onChangeHandler} 
+                        error={errors.password}
+                        required
+                    />     
+                    {newUser && (
+                        <TextField 
+                            
+                            name="confirmPassword"  
+                            label="Confirm Password" 
+                            className={classes.input} 
+                            type="password" 
+                            onBlur={onChangeHandler} 
+                            error={errors.confirmPassword}
+                            required
+                        />  
+                    )} 
+
+                    {errors.error && (
+                    <p className="text-danger text-center  py-2" style={{color: 'red'}}>
+                        {errors.error}
+                    </p>
+                    )}
+                    <Button className={classes.btn} variant="contained" type="submit">
+                    {newUser ? 'Create an Account' : 'Login'}
+                    </Button>
+                </form>
+                <p className="text-center pt-2">
+                    {newUser ? 'Already have an account' : 'Don’t have an account'} ?
+                    <span onClick={() => setNewUser(!newUser)} className={classes.toggleButton}>
+                    {newUser ? ' Login' : ' Create an account'}
+                    </span>
+                </p>
+            </Box>
 
             <Box style={{margin: 'auto', width: '30%'}}>
                 <div style={{marginBottom: '30px'}}>{DividerWithText()}</div>
-                <Button  className={classes.socialLoginBtn}>
+                <Button  className={classes.socialLoginBtn} onClick={facebookLogIn}>
                     <img src="https://i.ibb.co/G0cKsnq/fb.png" className={classes.socialLoginIcon} alt="Facebook" />
                     <span style={{ margin: 'auto',textAlign: 'center'}}>Continue with Facebook</span>
                 </Button>
                 <br />
-                <Button  className={classes.socialLoginBtn}>
+                <Button  className={classes.socialLoginBtn} onClick={googleSignIn}>
                     <img src="https://i.ibb.co/9NPV9n2/google.png" className={classes.socialLoginIcon} alt="Google" />
                     <span style={{ margin: 'auto',textAlign: 'center'}}>Continue with Google</span>
                 </Button>
