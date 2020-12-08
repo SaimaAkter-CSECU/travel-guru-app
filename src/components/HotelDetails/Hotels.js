@@ -6,6 +6,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import { Divider, Grid, Paper, Typography } from '@material-ui/core';
 import HotelDetails from './HotelDetails';
 // import Map from '../Map/Map';
+import GoogleMapSection from './GoogleMapSection';
 import './Hotels.css'; 
 
 const useStyles = makeStyles((theme) => ({
@@ -57,7 +58,9 @@ const Hotels = () => {
                 </Grid>
                 <Grid item xs={12} sm={5}>
                     <Paper className={classes.paper}>
-                        {/* <Map details={bookingInformation}></Map> */}
+                        {console.log(bookingInformation)}
+                        {/* <GoogleMap details={bookingInformation}></GoogleMap> */}
+                        <GoogleMapSection details={bookingInformation}></GoogleMapSection>
                     </Paper>
                 </Grid>
             </Grid>
